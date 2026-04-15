@@ -14,10 +14,15 @@ import csv
 import io
 from datetime import datetime
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'fraud_detection_secret_key'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fraud_detection_secret_key')
+app.config['DEBUG'] = os.getenv('FLASK_DEBUG', False)
 
 # Enable CORS for Power BI web connector
 @app.after_request

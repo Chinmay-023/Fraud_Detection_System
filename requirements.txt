@@ -3,6 +3,9 @@
 # Web Framework
 Flask
 
+# Environment Variables
+python-dotenv
+
 # Machine Learning (versions with pre-built wheels)
 scikit-learn
 pandas
