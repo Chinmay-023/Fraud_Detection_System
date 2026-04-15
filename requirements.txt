@@ -1,0 +1,16 @@
+# Credit Card Fraud Detection System - Requirements
+
+# Web Framework
+Flask
+
+# Machine Learning (versions with pre-built wheels)
+scikit-learn
+pandas
+numpy
+
+# Handling Imbalanced Data
+imbalanced-learn
+
+# Additional dependencies
+joblib
+threadpoolctl

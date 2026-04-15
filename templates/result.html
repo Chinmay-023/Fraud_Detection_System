@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Prediction Result | Fraud Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="result-container">
+
+        <!-- Prediction Status Banner -->
+        <div class="prediction-banner {{ 'fraud-detected' if result.is_fraud else 'safe-transaction' }}">
+            <div class="banner-icon">
+                {% if result.is_fraud %}
+                    ⚠️
+                {% else %}
+                    ✅
+                {% endif %}
+            </div>
+            <div class="banner-content">
+                <h2>{{ result.prediction_message }}</h2>
+                <p>Transaction ID: #{{ result.transaction_id }}</p>
+            </div>
+        </div>
+
+        <!-- Risk Score Card -->
+        <div class="score-card">
+            <h3>Risk Assessment</h3>
+
+            <div class="score-display">
+                <div class="score-circle" style="
+                    background: conic-gradient(
+                        {% if result.risk_score >= 80 %} #e74c3c {% elif result.risk_score >= 50 %} #f39c12 {% elif result.risk_score >= 20 %} #f1c40f {% else %} #27ae60 {% endif %}
+                        {{ result.risk_score }}%,
+                        #ecf0f1 {{ result.risk_score }}%
+                    );"
+                >
+                    <div class="score-inner">
+                        <span class="score-value">{{ result.risk_score }}%</span>
+                        <span class="score-label">Risk Score</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="risk-category">
+                <span class="category-badge {{ result.risk_category|lower|replace(' ', '-') }}">
+                    {{ result.risk_category }}
+                </span>
+            </div>
+        </div>
+
+        <div class="result-grid">
+            <!-- Transaction Details -->
+            <div class="details-card">
+                <h3>Transaction Details</h3>
+                <table class="details-table">
+                    <tr>
+                        <th>Amount:</th>
+                        <td>${{ "%.2f"|format(transaction_data.amount) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Time:</th>
+                        <td>{{ transaction_data.transaction_time }}</td>
+                    </tr>
+                    <tr>
+                        <th>Type:</th>
+                        <td>{{ transaction_data.transaction_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Category:</th>
+                        <td>{{ transaction_data.merchant_category }}</td>
+                    </tr>
+                    <tr>
+                        <th>International:</th>
+                        <td>{{ transaction_data.is_international }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Model Probabilities -->
+            <div class="details-card">
+                <h3>Model Analysis</h3>
+                <div class="model-probabilities"
+
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Logistic Regression</span>
+                            <span>{{ result.lr_probability }}%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-fill" style="width: {{ result.lr_probability }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Random Forest</span>
+                            <span>{{ result.rf_probability }}%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-fill" style="width: {{ result.rf_probability }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="probability-item highlight">
+                        <div class="probability-label">
+                            <span>Ensemble Average</span>
+                            <span>{{ result.ensemble_probability }}%</span>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-fill" style="width: {{ result.ensemble_probability }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Message -->
+        {% if result.is_fraud %}
+        <div class="alert-card">
+            <div class="alert-header">
+                <span class="alert-icon">🚨</span>
+                <h4>Fraud Alert Generated</h4>
+            </div>
+            <p>This transaction has been flagged for review. A fraud alert with level <strong>{{ result.alert_level }}</strong> has been created.</p>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/" class="btn-secondary"><span class="btn-icon">←</span> New Transaction</a>
+            <a href="/dashboard" class="btn-primary">View Dashboard <span class="btn-icon">→</span></a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

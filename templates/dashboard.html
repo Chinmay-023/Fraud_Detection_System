@@ -1,0 +1,520 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Fraud Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Fraud Detection Dashboard</h1>
+        <p class="subtitle">Real-time monitoring for fraud activity and model behavior</p>
+    </div>
+
+    <div class="dashboard-status">
+        <span class="live-indicator">Live</span>
+        <span id="last-updated">Waiting for live data...</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon total">TX</div>
+            <div class="stat-content">
+                <span class="stat-number" id="total-transactions">{{ stats.total_transactions }}</span>
+                <span class="stat-label">Total Transactions</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon safe">OK</div>
+            <div class="stat-content">
+                <span class="stat-number" id="safe-transactions">{{ stats.safe_count }}</span>
+                <span class="stat-label">Safe Transactions</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon fraud">FR</div>
+            <div class="stat-content">
+                <span class="stat-number" id="fraud-transactions">{{ stats.fraud_count }}</span>
+                <span class="stat-label">Fraud Detected</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon rate">%</div>
+            <div class="stat-content">
+                <span class="stat-number" id="fraud-rate">{{ stats.fraud_rate }}%</span>
+                <span class="stat-label">Fraud Rate</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-grid">
+        <section class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3>Model Probability Trends</h3>
+                <span class="badge">Last 12 Transactions</span>
+            </div>
+            <div class="chart-body">
+                <div class="chart-legend" id="model-trend-legend"></div>
+                <div class="chart-panel" id="model-trend-chart"></div>
+            </div>
+        </section>
+
+        <section class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3>Fraud vs Safe Trend</h3>
+                <span class="badge">Past 7 Days</span>
+            </div>
+            <div class="chart-body">
+                <div class="chart-legend" id="fraud-trend-legend"></div>
+                <div class="chart-panel" id="fraud-trend-chart"></div>
+            </div>
+        </section>
+
+        <section class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3>Risk Category Distribution</h3>
+                <span class="badge">All Predictions</span>
+            </div>
+            <div class="chart-body">
+                <div class="bars-panel" id="risk-distribution-chart"></div>
+            </div>
+        </section>
+
+        <section class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3>Amount vs Ensemble Risk</h3>
+                <span class="badge">Recent Transactions</span>
+            </div>
+            <div class="chart-body">
+                <div class="chart-legend" id="scatter-legend"></div>
+                <div class="chart-panel" id="scatter-chart"></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card large">
+            <div class="card-header">
+                <h3>Recent Transactions</h3>
+                <span class="badge" id="recent-count">{{ stats.recent_transactions|length }}</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Risk</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-transactions-body">
+                        {% if stats.recent_transactions %}
+                            {% for transaction in stats.recent_transactions %}
+                            <tr>
+                                <td>#{{ transaction.transaction_id }}</td>
+                                <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                                <td>{{ transaction.transaction_type }}</td>
+                                <td>{{ transaction.merchant_category }}</td>
+                                <td>
+                                    <span class="risk-badge {{ transaction.risk_category|lower|replace(' ', '-') if transaction.risk_category else 'unknown' }}">
+                                        {{ transaction.risk_category or 'Unknown' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if transaction.is_fraud %}
+                                        <span class="status-badge fraud">Fraud</span>
+                                    {% else %}
+                                        <span class="status-badge safe">Safe</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="empty-table">No transactions recorded yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3>Active Fraud Alerts</h3>
+                <span class="badge danger" id="alert-count">{{ stats.active_alerts|length }}</span>
+            </div>
+
+            <div class="alerts-list" id="alerts-list">
+                {% if stats.active_alerts %}
+                    {% for alert in stats.active_alerts %}
+                    <div class="alert-item {{ alert.alert_level|lower }}">
+                        <div class="alert-icon">AL</div>
+                        <div class="alert-content">
+                            <div class="alert-title">{{ alert.alert_level }} Alert</div>
+                            <div class="alert-meta">
+                                Transaction #{{ alert.transaction_id }}
+                                <span class="alert-amount">${{ "%.2f"|format(alert.amount) }}</span>
+                            </div>
+                            <p>{{ alert.alert_message }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state compact">
+                        <p>No active fraud alerts.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="actions-grid">
+            <a href="/" class="action-card">
+                <span class="action-icon">+</span>
+                <span class="action-text">New Transaction</span>
+            </a>
+            <a href="/api/dashboard-data" class="action-card" target="_blank">
+                <span class="action-icon">API</span>
+                <span class="action-text">Live Dashboard API</span>
+            </a>
+            <a href="/api/health" class="action-card" target="_blank">
+                <span class="action-icon">HC</span>
+                <span class="action-text">Health Check</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const chartColors = {
+    lr: "#1f77b4",
+    rf: "#ff7f0e",
+    ensemble: "#2ca02c",
+    fraud: "#d64545",
+    safe: "#1b9c68"
+};
+
+function formatTimestamp(value) {
+    if (!value) {
+        return "Waiting for live data...";
+    }
+    const timestamp = new Date(value);
+    return `Last updated: ${timestamp.toLocaleString()}`;
+}
+
+function setLegend(targetId, items) {
+    const container = document.getElementById(targetId);
+    container.innerHTML = items.map(item => `
+        <span class="legend-item">
+            <span class="legend-dot" style="background:${item.color}"></span>
+            ${item.label}
+        </span>
+    `).join("");
+}
+
+function renderEmptyChart(targetId, message) {
+    document.getElementById(targetId).innerHTML = `<div class="chart-empty">${message}</div>`;
+}
+
+function buildLinePath(points, width, height, padding, maxValue) {
+    if (!points.length) {
+        return "";
+    }
+    const usableWidth = width - padding.left - padding.right;
+    const usableHeight = height - padding.top - padding.bottom;
+    return points.map((value, index) => {
+        const x = padding.left + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
+        const y = padding.top + usableHeight - ((value / maxValue) * usableHeight);
+        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    }).join(" ");
+}
+
+function drawLineChart(targetId, labels, series, maxValue = 100) {
+    const target = document.getElementById(targetId);
+    if (!labels.length) {
+        renderEmptyChart(targetId, "No model history yet.");
+        return;
+    }
+
+    const width = 640;
+    const height = 280;
+    const padding = { top: 20, right: 16, bottom: 52, left: 42 };
+    const gridLines = [0, 25, 50, 75, 100];
+    const pointsMarkup = [];
+    const pathMarkup = [];
+
+    series.forEach(item => {
+        item.data.forEach((value, index) => {
+            const usableWidth = width - padding.left - padding.right;
+            const usableHeight = height - padding.top - padding.bottom;
+            const x = padding.left + (labels.length === 1 ? usableWidth / 2 : (index / (labels.length - 1)) * usableWidth);
+            const y = padding.top + usableHeight - ((value / maxValue) * usableHeight);
+            pointsMarkup.push(`<circle cx="${x}" cy="${y}" r="4" fill="${item.color}"><title>${item.label}: ${value}%</title></circle>`);
+        });
+        pathMarkup.push(`<path d="${buildLinePath(item.data, width, height, padding, maxValue)}" fill="none" stroke="${item.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>`);
+    });
+
+    const gridMarkup = gridLines.map(value => {
+        const usableHeight = height - padding.top - padding.bottom;
+        const y = padding.top + usableHeight - ((value / maxValue) * usableHeight);
+        return `
+            <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" class="chart-grid-line"></line>
+            <text x="8" y="${y + 4}" class="chart-axis-label">${value}</text>
+        `;
+    }).join("");
+
+    const labelMarkup = labels.map((label, index) => {
+        const usableWidth = width - padding.left - padding.right;
+        const x = padding.left + (labels.length === 1 ? usableWidth / 2 : (index / (labels.length - 1)) * usableWidth);
+        return `<text x="${x}" y="${height - 16}" text-anchor="middle" class="chart-axis-label">${label}</text>`;
+    }).join("");
+
+    target.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="chart-svg" aria-label="Line chart">
+            ${gridMarkup}
+            <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            ${pathMarkup.join("")}
+            ${pointsMarkup.join("")}
+            ${labelMarkup}
+        </svg>
+    `;
+}
+
+function drawGroupedBarChart(targetId, labels, fraudData, safeData) {
+    const target = document.getElementById(targetId);
+    if (!labels.length) {
+        renderEmptyChart(targetId, "No trend data yet.");
+        return;
+    }
+
+    const width = 640;
+    const height = 280;
+    const padding = { top: 20, right: 16, bottom: 52, left: 42 };
+    const maxValue = Math.max(...fraudData, ...safeData, 1);
+    const usableWidth = width - padding.left - padding.right;
+    const usableHeight = height - padding.top - padding.bottom;
+    const groupWidth = usableWidth / labels.length;
+    const barWidth = Math.min(28, groupWidth / 3);
+
+    const bars = labels.map((label, index) => {
+        const baseX = padding.left + (index * groupWidth) + (groupWidth / 2);
+        const fraudHeight = (fraudData[index] / maxValue) * usableHeight;
+        const safeHeight = (safeData[index] / maxValue) * usableHeight;
+        const fraudX = baseX - barWidth - 4;
+        const safeX = baseX + 4;
+        const fraudY = padding.top + usableHeight - fraudHeight;
+        const safeY = padding.top + usableHeight - safeHeight;
+        return `
+            <rect x="${fraudX}" y="${fraudY}" width="${barWidth}" height="${fraudHeight}" rx="4" fill="${chartColors.fraud}">
+                <title>${label} Fraud: ${fraudData[index]}</title>
+            </rect>
+            <rect x="${safeX}" y="${safeY}" width="${barWidth}" height="${safeHeight}" rx="4" fill="${chartColors.safe}">
+                <title>${label} Safe: ${safeData[index]}</title>
+            </rect>
+            <text x="${baseX}" y="${height - 16}" text-anchor="middle" class="chart-axis-label">${label.slice(5)}</text>
+        `;
+    }).join("");
+
+    const gridLines = Array.from({ length: 5 }, (_, i) => Math.round((maxValue / 4) * i));
+    const gridMarkup = gridLines.map(value => {
+        const y = padding.top + usableHeight - ((value / maxValue) * usableHeight);
+        return `
+            <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" class="chart-grid-line"></line>
+            <text x="8" y="${y + 4}" class="chart-axis-label">${value}</text>
+        `;
+    }).join("");
+
+    target.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="chart-svg" aria-label="Grouped bar chart">
+            ${gridMarkup}
+            <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            ${bars}
+        </svg>
+    `;
+}
+
+function drawDistributionBars(targetId, labels, counts) {
+    const target = document.getElementById(targetId);
+    if (!labels.length) {
+        renderEmptyChart(targetId, "No risk categories yet.");
+        return;
+    }
+
+    const maxValue = Math.max(...counts, 1);
+    target.innerHTML = labels.map((label, index) => {
+        const width = Math.max((counts[index] / maxValue) * 100, 4);
+        return `
+            <div class="metric-bar">
+                <div class="metric-bar-header">
+                    <span>${label}</span>
+                    <span>${counts[index]}</span>
+                </div>
+                <div class="metric-bar-track">
+                    <div class="metric-bar-fill" style="width:${width}%"></div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function drawScatterChart(targetId, points) {
+    const target = document.getElementById(targetId);
+    if (!points.length) {
+        renderEmptyChart(targetId, "No transaction points yet.");
+        return;
+    }
+
+    const width = 640;
+    const height = 280;
+    const padding = { top: 20, right: 20, bottom: 42, left: 52 };
+    const maxAmount = Math.max(...points.map(point => point.amount), 1);
+    const maxRisk = Math.max(...points.map(point => point.risk_score), 1);
+    const usableWidth = width - padding.left - padding.right;
+    const usableHeight = height - padding.top - padding.bottom;
+
+    const circles = points.map(point => {
+        const x = padding.left + (point.amount / maxAmount) * usableWidth;
+        const y = padding.top + usableHeight - (point.risk_score / maxRisk) * usableHeight;
+        const fill = point.is_fraud ? chartColors.fraud : chartColors.safe;
+        return `
+            <circle cx="${x}" cy="${y}" r="6" fill="${fill}" fill-opacity="0.85">
+                <title>${point.label} | Amount: $${point.amount} | Risk: ${point.risk_score}% | ${point.risk_category}</title>
+            </circle>
+        `;
+    }).join("");
+
+    target.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="chart-svg" aria-label="Scatter chart">
+            <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" class="chart-axis"></line>
+            <text x="${width / 2}" y="${height - 8}" text-anchor="middle" class="chart-axis-label">Amount</text>
+            <text x="16" y="${height / 2}" text-anchor="middle" class="chart-axis-label" transform="rotate(-90 16, ${height / 2})">Risk Score</text>
+            ${circles}
+        </svg>
+    `;
+}
+
+function renderRecentTransactions(transactions) {
+    const target = document.getElementById("recent-transactions-body");
+    document.getElementById("recent-count").textContent = transactions.length;
+
+    if (!transactions.length) {
+        target.innerHTML = `<tr><td colspan="6" class="empty-table">No transactions recorded yet.</td></tr>`;
+        return;
+    }
+
+    target.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td>#${transaction.transaction_id}</td>
+            <td>$${Number(transaction.amount).toFixed(2)}</td>
+            <td>${transaction.transaction_type}</td>
+            <td>${transaction.merchant_category}</td>
+            <td><span class="risk-badge ${String(transaction.risk_category || "Unknown").toLowerCase().replaceAll(" ", "-")}">${transaction.risk_category || "Unknown"}</span></td>
+            <td><span class="status-badge ${transaction.is_fraud ? "fraud" : "safe"}">${transaction.is_fraud ? "Fraud" : "Safe"}</span></td>
+        </tr>
+    `).join("");
+}
+
+function renderAlerts(alerts) {
+    const target = document.getElementById("alerts-list");
+    document.getElementById("alert-count").textContent = alerts.length;
+
+    if (!alerts.length) {
+        target.innerHTML = `<div class="empty-state compact"><p>No active fraud alerts.</p></div>`;
+        return;
+    }
+
+    target.innerHTML = alerts.map(alert => `
+        <div class="alert-item ${String(alert.alert_level).toLowerCase()}">
+            <div class="alert-icon">AL</div>
+            <div class="alert-content">
+                <div class="alert-title">${alert.alert_level} Alert</div>
+                <div class="alert-meta">
+                    Transaction #${alert.transaction_id}
+                    <span class="alert-amount">$${Number(alert.amount).toFixed(2)}</span>
+                </div>
+                <p>${alert.alert_message}</p>
+            </div>
+        </div>
+    `).join("");
+}
+
+function updateStats(stats) {
+    document.getElementById("total-transactions").textContent = stats.total_transactions;
+    document.getElementById("safe-transactions").textContent = stats.safe_count;
+    document.getElementById("fraud-transactions").textContent = stats.fraud_count;
+    document.getElementById("fraud-rate").textContent = `${stats.fraud_rate}%`;
+    renderRecentTransactions(stats.recent_transactions || []);
+    renderAlerts(stats.active_alerts || []);
+}
+
+function updateCharts(charts) {
+    setLegend("model-trend-legend", [
+        { label: "Logistic Regression", color: chartColors.lr },
+        { label: "Random Forest", color: chartColors.rf },
+        { label: "Ensemble", color: chartColors.ensemble }
+    ]);
+    drawLineChart("model-trend-chart", charts.recent_model_scores.labels || [], [
+        { label: "Logistic Regression", color: chartColors.lr, data: charts.recent_model_scores.lr || [] },
+        { label: "Random Forest", color: chartColors.rf, data: charts.recent_model_scores.rf || [] },
+        { label: "Ensemble", color: chartColors.ensemble, data: charts.recent_model_scores.ensemble || [] }
+    ]);
+
+    setLegend("fraud-trend-legend", [
+        { label: "Fraud", color: chartColors.fraud },
+        { label: "Safe", color: chartColors.safe }
+    ]);
+    drawGroupedBarChart(
+        "fraud-trend-chart",
+        charts.fraud_trend.labels || [],
+        charts.fraud_trend.fraud || [],
+        charts.fraud_trend.safe || []
+    );
+
+    drawDistributionBars(
+        "risk-distribution-chart",
+        charts.risk_distribution.labels || [],
+        charts.risk_distribution.counts || []
+    );
+
+    setLegend("scatter-legend", [
+        { label: "Fraud", color: chartColors.fraud },
+        { label: "Safe", color: chartColors.safe }
+    ]);
+    drawScatterChart("scatter-chart", charts.amount_risk_scatter || []);
+
+    document.getElementById("last-updated").textContent = formatTimestamp(charts.last_updated);
+}
+
+async function refreshDashboard() {
+    try {
+        const response = await fetch("/api/dashboard-data", { cache: "no-store" });
+        const payload = await response.json();
+
+        if (!payload.success) {
+            throw new Error(payload.error || "Dashboard refresh failed.");
+        }
+
+        updateStats(payload.stats);
+        updateCharts(payload.charts);
+    } catch (error) {
+        document.getElementById("last-updated").textContent = `Refresh failed: ${error.message}`;
+    }
+}
+
+refreshDashboard();
+setInterval(refreshDashboard, 15000);
+</script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}New Transaction | Fraud Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Transaction Fraud Detection</h1>
+        <p class="subtitle">Enter transaction details to analyze fraud risk</p>
+    </div>
+
+    <div class="form-container">
+        <form action="/predict" method="POST" class="fraud-form">
+
+            <!-- Transaction Amount -->
+            <div class="form-group">
+                <label for="amount" class="form-label">
+                    <span class="label-icon">$</span>
+                    Transaction Amount
+                </label>
+                <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    step="0.01"
+                    min="0.01"
+                    max="100000"
+                    required
+                    class="form-input"
+                    placeholder="Enter amount (e.g., 250.00)"
+                >
+            </div>
+
+            <div class="form-row">
+                <!-- Transaction Time -->
+                <div class="form-group half-width">
+                    <label for="transaction_time" class="form-label">
+                        <span class="label-icon">Time</span>
+                        Transaction Time
+                    </label>
+                    <select id="transaction_time" name="transaction_time" required class="form-select">
+                        <option value="" disabled selected>Select time of day</option>
+                        <option value="Morning">Morning (6 AM - 12 PM)</option>
+                        <option value="Afternoon">Afternoon (12 PM - 6 PM)</option>
+                        <option value="Evening">Evening (6 PM - 12 AM)</option>
+                        <option value="Night">Night (12 AM - 6 AM)</option>
+                    </select>
+                </div>
+
+                <!-- Transaction Type -->
+                <div class="form-group half-width">
+                    <label for="transaction_type" class="form-label">
+                        <span class="label-icon">Type</span>
+                        Transaction Type
+                    </label>
+                    <select id="transaction_type" name="transaction_type" required class="form-select">
+                        <option value="" disabled selected>Select type</option>
+                        <option value="Online">Online</option>
+                        <option value="POS">Point of Sale (POS)</option>
+                        <option value="ATM">ATM</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- Merchant Category -->
+                <div class="form-group half-width">
+                    <label for="merchant_category" class="form-label">
+                        <span class="label-icon">Category</span>
+                        Merchant Category
+                    </label>
+                    <select id="merchant_category" name="merchant_category" required class="form-select">
+                        <option value="" disabled selected>Select category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Grocery">Grocery</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+
+                <!-- International Transaction -->
+                <div class="form-group half-width">
+                    <label class="form-label">
+                        <span class="label-icon">Globe</span>
+                        International Transaction?
+                    </label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="is_international" value="Yes" required>
+                            <span class="radio-label">Yes</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="is_international" value="No" checked>
+                            <span class="radio-label">No</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-group">
+                <button type="submit" class="btn-submit">
+                    <span class="btn-icon">Analyze</span>
+                    Check for Fraud
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-section">
+        <h3>How It Works</h3>
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-number">1</div>
+                <h4>Enter Details</h4>
+                <p>Provide transaction information including amount, time, and type</p>
+            </div>
+            <div class="info-card">
+                <div class="info-number">2</div>
+                <h4>ML Analysis</h4>
+                <p>Our ensemble of Logistic Regression and Random Forest models analyze the data</p>
+            </div>
+            <div class="info-card">
+                <div class="info-number">3</div>
+                <h4>Get Results</h4>
+                <p>Receive fraud prediction with confidence score and risk assessment</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Error | Fraud Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1>Oops! Something went wrong</h1>
+        <div class="error-message">
+            <p>{{ error }}</p>
+        </div>
+        <div class="error-actions">
+            <a href="/" class="btn-primary">Go Back Home</a>
+            <a href="/dashboard" class="btn-secondary">View Dashboard</a>
+        </div>
+        <div class="error-help">
+            <h3>Need help?</h3>
+            <ul>
+                <li>Make sure you've trained the models by running <code>python model_training.py</code></li>
+                <li>Check that all required files are in place</li>
+                <li>Verify the database is initialized</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

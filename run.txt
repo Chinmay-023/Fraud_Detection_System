@@ -1,0 +1,6 @@
+cd "e:\New folder (2)\fraud_detection_system\fraud_detection_system"
+(optional)
+pip install -r requirements.txt
+python model_training.py
+python run_server.py
+python app.py
