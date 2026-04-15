@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: fraud-detection-system
+    env: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: python run_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
